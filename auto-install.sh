@@ -903,13 +903,6 @@ checkSelinux() {
   fi
 }
 
-displayFinalMessage() {
-
-   if [[ ${INSTALL_WEB} == true ]]; then
-       additional="View the web interface at http://pi.hole/admin or http://${IPV4_ADDRESS%/*}/admin
-
-Your Admin Webpage login password is ${1:-"NOT SET"}"
-   fi
 
   # Final completion message to user
   whiptail --msgbox --backtitle "Make it so." --title "Installation Complete!" "Configure your devices to use the Pi-hole as their DNS server using:
@@ -1207,9 +1200,6 @@ main() {
 
   echo "::: done."
 
-  if [[ "${useUpdateVars}" == false ]]; then
-      displayFinalMessage "${pw}"
-  fi
 
   echo ":::"
   if [[ "${useUpdateVars}" == false ]]; then
