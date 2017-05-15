@@ -283,8 +283,8 @@ use4andor6() {
   local useIPv4
   local useIPv6
 
-  useIPv4=true;;
-  useIPv6=true;;
+  useIPv4=true
+  useIPv6=true
     
   find_IPv4_information
   getStaticIPv4Settings
