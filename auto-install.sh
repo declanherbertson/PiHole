@@ -287,7 +287,6 @@ use4andor6() {
   useIPv6=true
     
   find_IPv4_information
-  getStaticIPv4Settings
   setStaticIPv4
   useIPv6dialog
   echo "::: IPv4 address: ${IPV4_ADDRESS}"
@@ -295,11 +294,7 @@ use4andor6() {
   
 }
 
-getStaticIPv4Settings() {
-  local ipSettingsCorrect
-  ipSettingsCorrect = True
- 
-}
+
 
 setDHCPCD() {
   # Append these lines to dhcpcd.conf to enable a static IP
