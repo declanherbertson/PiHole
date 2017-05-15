@@ -14,7 +14,8 @@
 #
 # Install with this command (from your Pi):
 #
-# curl -L install.pi-hole.net | bash
+# curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/auto-install.sh | bash
+
 
 set -e
 ######## VARIABLES #########
