@@ -359,7 +359,7 @@ use4andor6() {
  # fi
 }
 
-getStaticIPv4Settings() {
+#getStaticIPv4Settings() {
  # local ipSettingsCorrect
   # Ask if the user wants to use DHCP settings as their static IP
   #if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Do you want to use your current network settings as a static address?
@@ -401,7 +401,7 @@ getStaticIPv4Settings() {
    # done
     # End the if statement for DHCP vs. static
 #  fi
-}
+#}
 
 setDHCPCD() {
   # Append these lines to dhcpcd.conf to enable a static IP
