@@ -1301,7 +1301,7 @@ main() {
 
     if command -v sudo &> /dev/null; then
       echo "::: Utility sudo located."
-      exec curl -sSL https://raw.githubusercontent.com/pi-hole/pi-hole/master/automated%20install/basic-install.sh | sudo bash "$@"
+      exec curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/originalinstall.sh | sudo bash "$@"
       exit $?
     else
       echo "::: sudo is needed for the Web interface to run pihole commands.  Please run this script as root and it will be automatically installed."
