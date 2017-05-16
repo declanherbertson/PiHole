@@ -483,61 +483,62 @@ valid_ip() {
 setDNS() {
   local DNSSettingsCorrect
 
-  #DNSChooseOptions=(Google ""
-   #   OpenDNS ""
-   #   Level3 ""
-   #   Norton ""
-   #   Comodo ""
-   #   DNSWatch ""
-   #   Custom "")
-  #DNSchoices=$(whiptail --separate-output --menu "Select Upstream DNS Provider. To use your own, select Custom." ${r} ${c} 6 \
-  #  "${DNSChooseOptions[@]}" 2>&1 >/dev/tty) || \
-  #  { echo "::: Cancel selected. Exiting"; exit 1; }
-  #case ${DNSchoices} in
-  #  Google)
+  DNSChooseOptions=(Google ""
+      OpenDNS ""
+      Level3 ""
+      Norton ""
+      Comodo ""
+      DNSWatch ""
+      Custom "")
+  DNSchoices=$(whiptail --separate-output --menu "Select Upstream DNS Provider. To use your own, select Custom." ${r} ${c} 6 \
+    "${DNSChooseOptions[@]}" 2>&1 >/dev/tty) || \
+    { echo "::: Cancel selected. Exiting"; exit 1; }
+  case ${DNSchoices} in
+    Google)
       echo "::: Using Google DNS servers."
       PIHOLE_DNS_1="8.8.8.8"
       PIHOLE_DNS_2="8.8.4.4"
-    #  ;;
-   # OpenDNS)
-   #   echo "::: Using OpenDNS servers."
-   #   PIHOLE_DNS_1="208.67.222.222"
-   #   PIHOLE_DNS_2="208.67.220.220"
-   #   ;;
-   # Level3)
-    #  echo "::: Using Level3 servers."
-    #  PIHOLE_DNS_1="4.2.2.1"
-    #  PIHOLE_DNS_2="4.2.2.2"
-    #  ;;
-   # Norton)
-   #   echo "::: Using Norton ConnectSafe servers."
-   #   PIHOLE_DNS_1="199.85.126.10"
-    #  PIHOLE_DNS_2="199.85.127.10"
-    #  ;;
-    #Comodo)
-    #  echo "::: Using Comodo Secure servers."
-    #  PIHOLE_DNS_1="8.26.56.26"
-    #  PIHOLE_DNS_2="8.20.247.20"
-    #  ;;
-   # DNSWatch)
-   #   echo "::: Using DNS.WATCH servers."
-    #  PIHOLE_DNS_1="84.200.69.80"
-    #  PIHOLE_DNS_2="84.200.70.40"
-    #  ;;
-   # Custom)
-   #   until [[ ${DNSSettingsCorrect} = True ]]; do
-   #   strInvalid="Invalid"
-   #   if [ ! ${PIHOLE_DNS_1} ]; then
-   #     if [ ! ${PIHOLE_DNS_2} ]; then
-     #     prePopulate=""
-     #   else
-     #     prePopulate=", ${PIHOLE_DNS_2}"
-     #   fi
-     # elif  [ ${PIHOLE_DNS_1} ] && [ ! ${PIHOLE_DNS_2} ]; then
-     #   prePopulate="${PIHOLE_DNS_1}"
-    #  elif [ ${PIHOLE_DNS_1} ] && [ ${PIHOLE_DNS_2} ]; then
-     #   prePopulate="${PIHOLE_DNS_1}, ${PIHOLE_DNS_2}"
-    #  fi
+      ;;
+    OpenDNS)
+      echo "::: Using OpenDNS servers."
+      PIHOLE_DNS_1="208.67.222.222"
+      PIHOLE_DNS_2="208.67.220.220"
+      ;;
+    Level3)
+      echo "::: Using Level3 servers."
+      PIHOLE_DNS_1="4.2.2.1"
+      PIHOLE_DNS_2="4.2.2.2"
+      ;;
+    Norton)
+      echo "::: Using Norton ConnectSafe servers."
+      PIHOLE_DNS_1="199.85.126.10"
+      PIHOLE_DNS_2="199.85.127.10"
+      ;;
+    Comodo)
+      echo "::: Using Comodo Secure servers."
+      PIHOLE_DNS_1="8.26.56.26"
+      PIHOLE_DNS_2="8.20.247.20"
+      ;;
+    DNSWatch)
+      echo "::: Using DNS.WATCH servers."
+      PIHOLE_DNS_1="84.200.69.80"
+      PIHOLE_DNS_2="84.200.70.40"
+      ;;
+    Custom)
+      until [[ ${DNSSettingsCorrect} = True ]]; do
+      strInvalid="Invalid"
+      if [ ! ${PIHOLE_DNS_1} ]; then
+        if [ ! ${PIHOLE_DNS_2} ]; then
+          prePopulate=""
+        else
+          prePopulate=", ${PIHOLE_DNS_2}"
+        fi
+      elif  [ ${PIHOLE_DNS_1} ] && [ ! ${PIHOLE_DNS_2} ]; then
+        prePopulate="${PIHOLE_DNS_1}"
+      elif [ ${PIHOLE_DNS_1} ] && [ ${PIHOLE_DNS_2} ]; then
+        prePopulate="${PIHOLE_DNS_1}, ${PIHOLE_DNS_2}"
+      fi
+
       piholeDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "${prePopulate}" 3>&1 1>&2 2>&3) || \
       { echo "::: Cancel selected. Exiting"; exit 1; }
       PIHOLE_DNS_1=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
@@ -565,10 +566,9 @@ setDNS() {
         DNSSettingsCorrect=False
         fi
       fi
-      
+      done
       ;;
   esac
-     
 }
 
 setLogging() {
