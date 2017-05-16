@@ -14,8 +14,7 @@
 #
 # Install with this command (from your Pi):
 #
-# curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/auto-install.sh | bash
-
+# curl -L install.pi-hole.net | bash
 
 set -e
 ######## VARIABLES #########
@@ -30,7 +29,6 @@ piholeGitUrl="https://github.com/pi-hole/pi-hole.git"
 PI_HOLE_LOCAL_REPO="/etc/.pihole"
 PI_HOLE_FILES=(chronometer list piholeDebug piholeLogFlush setupLCD update version gravity uninstall webpage)
 PI_HOLE_INSTALL_DIR="/opt/pihole"
-
 useUpdateVars=false
 
 IPV4_ADDRESS=""
@@ -233,8 +231,22 @@ find_IPv4_information() {
 
 }
 
+get_available_interfaces() {
+  # Get available UP interfaces.
+  availableInterfaces=$(ip --oneline link show up | grep -v "lo" | awk '{print $2}' | cut -d':' -f1 | cut -d'@' -f1)
+}
 
+welcomeDialogs() {
+  # Display the welcome dialog
+  whiptail --msgbox --backtitle "Welcome" --title "Pi-hole automated installer" "\n\nThis installer will transform your device into a network-wide ad blocker!" ${r} ${c}
 
+  # Support for a part-time dev
+  whiptail --msgbox --backtitle "Plea" --title "Free and open source" "\n\nThe Pi-hole is free, but powered by your donations:  http://pi-hole.net/donate" ${r} ${c}
+
+  # Explain the need for a static address
+  whiptail --msgbox --backtitle "Initiating network interface" --title "Static IP Needed" "\n\nThe Pi-hole is a SERVER so it needs a STATIC IP ADDRESS to function properly.
+In the next section, you can choose to use your current network settings (DHCP) or to manually edit them." ${r} ${c}
+}
 
 verifyFreeDiskSpace() {
 
@@ -267,7 +279,42 @@ verifyFreeDiskSpace() {
 }
 
 
+chooseInterface() {
+  # Turn the available interfaces into an array so it can be used with a whiptail dialog
+  local interfacesArray=()
+  # Number of available interfaces
+  local interfaceCount
+  # Whiptail variable storage
+  local chooseInterfaceCmd
+  # Temporary Whiptail options storage
+  local chooseInterfaceOptions
+  # Loop sentinel variable
+  local firstLoop=1
 
+  # Find out how many interfaces are available to choose from
+  interfaceCount=$(echo "${availableInterfaces}" | wc -l)
+
+  if [[ ${interfaceCount} -eq 1 ]]; then
+      PIHOLE_INTERFACE="${availableInterfaces}"
+  else
+      while read -r line; do
+        mode="OFF"
+        if [[ ${firstLoop} -eq 1 ]]; then
+          firstLoop=0
+          mode="ON"
+        fi
+        interfacesArray+=("${line}" "available" "${mode}")
+      done <<< "${availableInterfaces}"
+
+      chooseInterfaceCmd=(whiptail --separate-output --radiolist "Choose An Interface (press space to select)" ${r} ${c} ${interfaceCount})
+      chooseInterfaceOptions=$("${chooseInterfaceCmd[@]}" "${interfacesArray[@]}" 2>&1 >/dev/tty) || \
+      { echo "::: Cancel selected. Exiting"; exit 1; }
+      for desiredInterface in ${chooseInterfaceOptions}; do
+        PIHOLE_INTERFACE=${desiredInterface}
+        echo "::: Using interface: $PIHOLE_INTERFACE"
+      done
+  fi
+}
 
 useIPv6dialog() {
   # Show the IPv6 address used for blocking
@@ -282,19 +329,78 @@ useIPv6dialog() {
 use4andor6() {
   local useIPv4
   local useIPv6
-
-  useIPv4=true
-  useIPv6=true
-    
-  find_IPv4_information
-  setStaticIPv4
-  useIPv6dialog
-  echo "::: IPv4 address: ${IPV4_ADDRESS}"
-  echo "::: IPv6 address: ${IPV6_ADDRESS}"
-  
+  # Let use select IPv4 and/or IPv6
+  cmd=(whiptail --separate-output --checklist "Select Protocols (press space to select)" ${r} ${c} 2)
+  options=(IPv4 "Block ads over IPv4" on
+  IPv6 "Block ads over IPv6" on)
+  choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty) || { echo "::: Cancel selected. Exiting"; exit 1; }
+  for choice in ${choices}
+  do
+    case ${choice} in
+    IPv4  )   useIPv4=true;;
+    IPv6  )   useIPv6=true;;
+    esac
+  done
+  if [[ ${useIPv4} ]]; then
+    find_IPv4_information
+    getStaticIPv4Settings
+    setStaticIPv4
+  fi
+  if [[ ${useIPv6} ]]; then
+    useIPv6dialog
+  fi
+    echo "::: IPv4 address: ${IPV4_ADDRESS}"
+    echo "::: IPv6 address: ${IPV6_ADDRESS}"
+  if [ ! ${useIPv4} ] && [ ! ${useIPv6} ]; then
+    echo "::: Cannot continue, neither IPv4 or IPv6 selected"
+    echo "::: Exiting"
+    exit 1
+  fi
 }
 
+getStaticIPv4Settings() {
+  local ipSettingsCorrect
+  # Ask if the user wants to use DHCP settings as their static IP
+  if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Do you want to use your current network settings as a static address?
+          IP address:    ${IPV4_ADDRESS}
+          Gateway:       ${IPv4gw}" ${r} ${c}; then
+    # If they choose yes, let the user know that the IP address will not be available via DHCP and may cause a conflict.
+    whiptail --msgbox --backtitle "IP information" --title "FYI: IP Conflict" "It is possible your router could still try to assign this IP to a device, which would cause a conflict.  But in most cases the router is smart enough to not do that.
+If you are worried, either manually set the address, or modify the DHCP reservation pool so it does not include the IP you want.
+It is also possible to use a DHCP reservation, but if you are going to do that, you might as well set a static address." ${r} ${c}
+    # Nothing else to do since the variables are already set above
+  else
+    # Otherwise, we need to ask the user to input their desired settings.
+    # Start by getting the IPv4 address (pre-filling it with info gathered from DHCP)
+    # Start a loop to let the user enter their information with the chance to go back and edit it if necessary
+    until [[ ${ipSettingsCorrect} = True ]]; do
 
+      # Ask for the IPv4 address
+      IPV4_ADDRESS=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 address" --inputbox "Enter your desired IPv4 address" ${r} ${c} "${IPV4_ADDRESS}" 3>&1 1>&2 2>&3) || \
+      # Cancelling IPv4 settings window
+      { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
+      echo "::: Your static IPv4 address:    ${IPV4_ADDRESS}"
+
+      # Ask for the gateway
+      IPv4gw=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 gateway (router)" --inputbox "Enter your desired IPv4 default gateway" ${r} ${c} "${IPv4gw}" 3>&1 1>&2 2>&3) || \
+      # Cancelling gateway settings window
+      { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
+      echo "::: Your static IPv4 gateway:    ${IPv4gw}"
+
+      # Give the user a chance to review their settings before moving on
+      if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Are these settings correct?
+        IP address:    ${IPV4_ADDRESS}
+        Gateway:       ${IPv4gw}" ${r} ${c}; then
+        # After that's done, the loop ends and we move on
+        ipSettingsCorrect=True
+        else
+        # If the settings are wrong, the loop continues
+        ipSettingsCorrect=False
+      fi
+    done
+    # End the if statement for DHCP vs. static
+  fi
+}
 
 setDHCPCD() {
   # Append these lines to dhcpcd.conf to enable a static IP
@@ -373,21 +479,137 @@ valid_ip() {
   return ${stat}
 }
 
-setDNS() {  
-  echo "::: Using Google DNS servers."
-  PIHOLE_DNS_1="8.8.8.8"
-  PIHOLE_DNS_2="8.8.4.4"   
+setDNS() {
+  local DNSSettingsCorrect
+
+  DNSChooseOptions=(Google ""
+      OpenDNS ""
+      Level3 ""
+      Norton ""
+      Comodo ""
+      DNSWatch ""
+      Custom "")
+  DNSchoices=$(whiptail --separate-output --menu "Select Upstream DNS Provider. To use your own, select Custom." ${r} ${c} 6 \
+    "${DNSChooseOptions[@]}" 2>&1 >/dev/tty) || \
+    { echo "::: Cancel selected. Exiting"; exit 1; }
+  case ${DNSchoices} in
+    Google)
+      echo "::: Using Google DNS servers."
+      PIHOLE_DNS_1="8.8.8.8"
+      PIHOLE_DNS_2="8.8.4.4"
+      ;;
+    OpenDNS)
+      echo "::: Using OpenDNS servers."
+      PIHOLE_DNS_1="208.67.222.222"
+      PIHOLE_DNS_2="208.67.220.220"
+      ;;
+    Level3)
+      echo "::: Using Level3 servers."
+      PIHOLE_DNS_1="4.2.2.1"
+      PIHOLE_DNS_2="4.2.2.2"
+      ;;
+    Norton)
+      echo "::: Using Norton ConnectSafe servers."
+      PIHOLE_DNS_1="199.85.126.10"
+      PIHOLE_DNS_2="199.85.127.10"
+      ;;
+    Comodo)
+      echo "::: Using Comodo Secure servers."
+      PIHOLE_DNS_1="8.26.56.26"
+      PIHOLE_DNS_2="8.20.247.20"
+      ;;
+    DNSWatch)
+      echo "::: Using DNS.WATCH servers."
+      PIHOLE_DNS_1="84.200.69.80"
+      PIHOLE_DNS_2="84.200.70.40"
+      ;;
+    Custom)
+      until [[ ${DNSSettingsCorrect} = True ]]; do
+      strInvalid="Invalid"
+      if [ ! ${PIHOLE_DNS_1} ]; then
+        if [ ! ${PIHOLE_DNS_2} ]; then
+          prePopulate=""
+        else
+          prePopulate=", ${PIHOLE_DNS_2}"
+        fi
+      elif  [ ${PIHOLE_DNS_1} ] && [ ! ${PIHOLE_DNS_2} ]; then
+        prePopulate="${PIHOLE_DNS_1}"
+      elif [ ${PIHOLE_DNS_1} ] && [ ${PIHOLE_DNS_2} ]; then
+        prePopulate="${PIHOLE_DNS_1}, ${PIHOLE_DNS_2}"
+      fi
+
+      piholeDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "${prePopulate}" 3>&1 1>&2 2>&3) || \
+      { echo "::: Cancel selected. Exiting"; exit 1; }
+      PIHOLE_DNS_1=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
+      PIHOLE_DNS_2=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$2}')
+      if ! valid_ip "${PIHOLE_DNS_1}" || [ ! "${PIHOLE_DNS_1}" ]; then
+        PIHOLE_DNS_1=${strInvalid}
+      fi
+      if ! valid_ip "${PIHOLE_DNS_2}" && [ "${PIHOLE_DNS_2}" ]; then
+        PIHOLE_DNS_2=${strInvalid}
+      fi
+      if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]] || [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
+        whiptail --msgbox --backtitle "Invalid IP" --title "Invalid IP" "One or both entered IP addresses were invalid. Please try again.\n\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}
+        if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]]; then
+          PIHOLE_DNS_1=""
+        fi
+        if [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
+          PIHOLE_DNS_2=""
+        fi
+        DNSSettingsCorrect=False
+      else
+        if (whiptail --backtitle "Specify Upstream DNS Provider(s)" --title "Upstream DNS Provider(s)" --yesno "Are these settings correct?\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}); then
+        DNSSettingsCorrect=True
+      else
+      # If the settings are wrong, the loop continues
+        DNSSettingsCorrect=False
+        fi
+      fi
+      done
+      ;;
+  esac
 }
 
 setLogging() {
-  echo "::: Logging On."
-  QUERY_LOGGING=true
-       
+  local LogToggleCommand
+  local LogChooseOptions
+  local LogChoices
+
+  LogToggleCommand=(whiptail --separate-output --radiolist "Do you want to log queries?\n (Disabling will render graphs on the Admin page useless):" ${r} ${c} 6)
+  LogChooseOptions=("On (Recommended)" "" on
+      Off "" off)
+  LogChoices=$("${LogToggleCommand[@]}" "${LogChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
+    case ${LogChoices} in
+      "On (Recommended)")
+        echo "::: Logging On."
+        QUERY_LOGGING=true
+        ;;
+      Off)
+        echo "::: Logging Off."
+        QUERY_LOGGING=false
+        ;;
+    esac
 }
 
 setAdminFlag() {
-   echo "::: Web Interface On."
-   INSTALL_WEB=true    
+  local WebToggleCommand
+  local WebChooseOptions
+  local WebChoices
+
+  WebToggleCommand=(whiptail --separate-output --radiolist "Do you wish to install the web admin interface?" ${r} ${c} 6)
+  WebChooseOptions=("On (Recommended)" "" on
+      Off "" off)
+  WebChoices=$("${WebToggleCommand[@]}" "${WebChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
+    case ${WebChoices} in
+      "On (Recommended)")
+        echo "::: Web Interface On."
+        INSTALL_WEB=true
+        ;;
+      Off)
+        echo "::: Web Interface off."
+        INSTALL_WEB=false
+        ;;
+    esac
 }
 
 
@@ -903,8 +1125,22 @@ checkSelinux() {
   fi
 }
 
+displayFinalMessage() {
 
- 
+   if [[ ${INSTALL_WEB} == true ]]; then
+       additional="View the web interface at http://pi.hole/admin or http://${IPV4_ADDRESS%/*}/admin
+Your Admin Webpage login password is ${1:-"NOT SET"}"
+   fi
+
+  # Final completion message to user
+  whiptail --msgbox --backtitle "Make it so." --title "Installation Complete!" "Configure your devices to use the Pi-hole as their DNS server using:
+IPv4:	${IPV4_ADDRESS%/*}
+IPv6:	${IPV6_ADDRESS:-"Not Configured"}
+If you set a new IP address, you should restart the Pi.
+The install log is in /etc/pihole.
+${additional}" ${r} ${c}
+}
+
 update_dialogs() {
   # reconfigure
   if [ "${reconfigure}" = true ]; then
@@ -1056,9 +1292,10 @@ main() {
     echo "::: any concerns with this requirement. Please be sure to download this script from a trusted source."
     echo ":::"
     echo "::: Detecting the presence of the sudo utility for continuation of this install..."
+
     if command -v sudo &> /dev/null; then
       echo "::: Utility sudo located."
-      exec curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/auto-install.sh | sudo bash "$@"
+      exec curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/originalinstall.sh | sudo bash "$@"
       exit $?
     else
       echo "::: sudo is needed for the Web interface to run pihole commands.  Please run this script as root and it will be automatically installed."
@@ -1109,7 +1346,8 @@ main() {
 
 
   if [[ ${useUpdateVars} == false ]]; then
-  
+    # Display welcome dialogs
+    welcomeDialogs
     # Create directory for Pi-hole storage
     mkdir -p /etc/pihole/
 
@@ -1117,8 +1355,11 @@ main() {
     if [[ ${INSTALL_WEB} == true ]]; then
       stop_service lighttpd
     fi
-   
-    # Sets the upstream DNS Servers to google
+    # Determine available interfaces
+    get_available_interfaces
+    # Find interfaces and let the user choose one
+    chooseInterface
+    # Decide what upstream DNS Servers to use
     setDNS
     # Let the user decide if they want to block ads over IPv4 and/or IPv6
     use4andor6
@@ -1188,6 +1429,9 @@ main() {
 
   echo "::: done."
 
+  if [[ "${useUpdateVars}" == false ]]; then
+      displayFinalMessage "${pw}"
+  fi
 
   echo ":::"
   if [[ "${useUpdateVars}" == false ]]; then
