@@ -904,19 +904,7 @@ checkSelinux() {
 }
 
 
-  # Final completion message to user
-  whiptail --msgbox --backtitle "Make it so." --title "Installation Complete!" "Configure your devices to use the Pi-hole as their DNS server using:
-
-IPv4:	${IPV4_ADDRESS%/*}
-IPv6:	${IPV6_ADDRESS:-"Not Configured"}
-
-If you set a new IP address, you should restart the Pi.
-
-The install log is in /etc/pihole.
-
-${additional}" ${r} ${c}
-}
-
+ 
 update_dialogs() {
   # reconfigure
   if [ "${reconfigure}" = true ]; then
