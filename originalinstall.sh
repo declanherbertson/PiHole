@@ -1325,9 +1325,9 @@ main() {
     if [[ "${runUnattended}" == true ]]; then
       echo "::: --unattended passed to install script, no whiptail dialogs will be displayed"
       useUpdateVars=true
-    else
+    #else
      # update_dialogs
-    fi
+    #fi
   fi
 
   # Start the installer
