@@ -481,7 +481,7 @@ valid_ip() {
 }
 
 setDNS() {
-  #local DNSSettingsCorrect
+  local DNSSettingsCorrect
 
   #DNSChooseOptions=(Google ""
    #   OpenDNS ""
@@ -538,37 +538,37 @@ setDNS() {
     #  elif [ ${PIHOLE_DNS_1} ] && [ ${PIHOLE_DNS_2} ]; then
      #   prePopulate="${PIHOLE_DNS_1}, ${PIHOLE_DNS_2}"
     #  fi
-#might be troubled part
-      #piholeDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "${prePopulate}" 3>&1 1>&2 2>&3) || \
-      #{ echo "::: Cancel selected. Exiting"; exit 1; }
-     # PIHOLE_DNS_1=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
-     # PIHOLE_DNS_2=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$2}')
-     # if ! valid_ip "${PIHOLE_DNS_1}" || [ ! "${PIHOLE_DNS_1}" ]; then
-     #   PIHOLE_DNS_1=${strInvalid}
-     # fi
-     # if ! valid_ip "${PIHOLE_DNS_2}" && [ "${PIHOLE_DNS_2}" ]; then
-     #   PIHOLE_DNS_2=${strInvalid}
-     # fi
-     # if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]] || [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
-      #  whiptail --msgbox --backtitle "Invalid IP" --title "Invalid IP" "One or both entered IP addresses were invalid. Please try again.\n\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}
-     #   if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]]; then
-      #    PIHOLE_DNS_1=""
-      #  fi
-      #  if [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
-       #   PIHOLE_DNS_2=""
-       # fi
-      #  DNSSettingsCorrect=False
-     # else
-     #   if (whiptail --backtitle "Specify Upstream DNS Provider(s)" --title "Upstream DNS Provider(s)" --yesno "Are these settings correct?\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}); then
-     #   DNSSettingsCorrect=True
-     # else
+
+     piholeDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "${prePopulate}" 3>&1 1>&2 2>&3) || \
+     { echo "::: Cancel selected. Exiting"; exit 1; }
+     PIHOLE_DNS_1=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
+     PIHOLE_DNS_2=$(echo "${piholeDNS}" | sed 's/[, \t]\+/,/g' | awk -F, '{print$2}')
+     if ! valid_ip "${PIHOLE_DNS_1}" || [ ! "${PIHOLE_DNS_1}" ]; then
+       PIHOLE_DNS_1=${strInvalid}
+     fi
+     if ! valid_ip "${PIHOLE_DNS_2}" && [ "${PIHOLE_DNS_2}" ]; then
+       PIHOLE_DNS_2=${strInvalid}
+     fi
+     if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]] || [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
+       whiptail --msgbox --backtitle "Invalid IP" --title "Invalid IP" "One or both entered IP addresses were invalid. Please try again.\n\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}
+       if [[ ${PIHOLE_DNS_1} == "${strInvalid}" ]]; then
+         PIHOLE_DNS_1=""
+       fi
+       if [[ ${PIHOLE_DNS_2} == "${strInvalid}" ]]; then
+         PIHOLE_DNS_2=""
+       fi
+       DNSSettingsCorrect=False
+       else
+       if (whiptail --backtitle "Specify Upstream DNS Provider(s)" --title "Upstream DNS Provider(s)" --yesno "Are these settings correct?\n    DNS Server 1:   $PIHOLE_DNS_1\n    DNS Server 2:   ${PIHOLE_DNS_2}" ${r} ${c}); then
+       DNSSettingsCorrect=True
+       else
       # If the settings are wrong, the loop continues
-     #   DNSSettingsCorrect=False
-     #   fi
-     # fi
-    #  done
-   #   ;;
- # esac
+         DNSSettingsCorrect=False
+       fi
+     fi
+     done
+     ;;
+     esac
 }
 
 setLogging() {
