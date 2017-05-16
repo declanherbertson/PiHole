@@ -464,45 +464,15 @@ setDNS() {
 }
 
 setLogging() {
-  local LogToggleCommand
-  local LogChooseOptions
-  local LogChoices
-
-  LogToggleCommand=(whiptail --separate-output --radiolist "Do you want to log queries?\n (Disabling will render graphs on the Admin page useless):" ${r} ${c} 6)
-  LogChooseOptions=("On (Recommended)" "" on
-      Off "" off)
-  LogChoices=$("${LogToggleCommand[@]}" "${LogChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
-    case ${LogChoices} in
-      "On (Recommended)")
-        echo "::: Logging On."
-        QUERY_LOGGING=true
-        ;;
-      Off)
-        echo "::: Logging Off."
-        QUERY_LOGGING=false
-        ;;
-    esac
+ echo "::: Logging On."
+ QUERY_LOGGING=true
+       
 }
 
 setAdminFlag() {
-  local WebToggleCommand
-  local WebChooseOptions
-  local WebChoices
-
-  WebToggleCommand=(whiptail --separate-output --radiolist "Do you wish to install the web admin interface?" ${r} ${c} 6)
-  WebChooseOptions=("On (Recommended)" "" on
-      Off "" off)
-  WebChoices=$("${WebToggleCommand[@]}" "${WebChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
-    case ${WebChoices} in
-      "On (Recommended)")
-        echo "::: Web Interface On."
-        INSTALL_WEB=true
-        ;;
-      Off)
-        echo "::: Web Interface off."
-        INSTALL_WEB=false
-        ;;
-    esac
+ echo "::: Web Interface On."
+ INSTALL_WEB=true
+        
 }
 
 
@@ -1212,8 +1182,8 @@ main() {
     if [[ "${runUnattended}" == true ]]; then
       echo "::: --unattended passed to install script, no whiptail dialogs will be displayed"
       useUpdateVars=true
-    else
-      update_dialogs
+    #else
+      #update_dialogs
     fi
   fi
 
@@ -1322,9 +1292,9 @@ main() {
 
   echo "::: done."
 
-  if [[ "${useUpdateVars}" == false ]]; then
-      displayFinalMessage "${pw}"
-  fi
+  #if [[ "${useUpdateVars}" == false ]]; then
+    #  displayFinalMessage "${pw}"
+ # fi
 
   echo ":::"
   if [[ "${useUpdateVars}" == false ]]; then
