@@ -565,7 +565,7 @@ setDNS() {
         DNSSettingsCorrect=False
         fi
       fi
-      done
+      
       ;;
   esac
      
