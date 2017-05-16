@@ -1356,9 +1356,9 @@ main() {
       stop_service lighttpd
     fi
     # Determine available interfaces
-    #get_available_interfaces
+    get_available_interfaces
     # Find interfaces and let the user choose one
-    #chooseInterface
+    chooseInterface
     # Decide what upstream DNS Servers to use
     setDNS
     # Let the user decide if they want to block ads over IPv4 and/or IPv6
