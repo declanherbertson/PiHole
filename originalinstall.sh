@@ -321,87 +321,87 @@ useIPv6dialog() {
   # Show the IPv6 address used for blocking
   IPV6_ADDRESS=$(ip -6 route get 2001:4860:4860::8888 | grep -v "unreachable" | awk -F " " '{ for(i=1;i<=NF;i++) if ($i == "src") print $(i+1) }')
 
-  #if [[ ! -z "${IPV6_ADDRESS}" ]]; then
-   # whiptail --msgbox --backtitle "IPv6..." --title "IPv6 Supported" "$IPV6_ADDRESS will be used to block ads." ${r} ${c}
- # fi
+  if [[ ! -z "${IPV6_ADDRESS}" ]]; then
+    whiptail --msgbox --backtitle "IPv6..." --title "IPv6 Supported" "$IPV6_ADDRESS will be used to block ads." ${r} ${c}
+  fi
 }
 
 
 use4andor6() {
-  #local useIPv4
-  #local useIPv6
+  local useIPv4
+  local useIPv6
   # Let use select IPv4 and/or IPv6
-  #cmd=(whiptail --separate-output --checklist "Select Protocols (press space to select)" ${r} ${c} 2)
-  #options=(IPv4 "Block ads over IPv4" on
-  #IPv6 "Block ads over IPv6" on)
-  #choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty) || { echo "::: Cancel selected. Exiting"; exit 1; }
-  #for choice in ${choices}
-  #do
-  #  case ${choice} in
-   # IPv4  )   useIPv4=true;;
-   #IPv6  )   useIPv6=true;;
-   # esac
- # done
-  #if [[ ${useIPv4} ]]; then
+  cmd=(whiptail --separate-output --checklist "Select Protocols (press space to select)" ${r} ${c} 2)
+  options=(IPv4 "Block ads over IPv4" on
+  IPv6 "Block ads over IPv6" on)
+  choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty) || { echo "::: Cancel selected. Exiting"; exit 1; }
+  for choice in ${choices}
+  do
+    case ${choice} in
+    IPv4  )   useIPv4=true;;
+    IPv6  )   useIPv6=true;;
+    esac
+  done
+  if [[ ${useIPv4} ]]; then
     find_IPv4_information
-    #getStaticIPv4Settings
+    getStaticIPv4Settings
     setStaticIPv4
-  #fi
-  #if [[ ${useIPv6} ]]; then
+  fi
+  if [[ ${useIPv6} ]]; then
     useIPv6dialog
-  #fi
+  fi
     echo "::: IPv4 address: ${IPV4_ADDRESS}"
     echo "::: IPv6 address: ${IPV6_ADDRESS}"
-  #if [ ! ${useIPv4} ] && [ ! ${useIPv6} ]; then
-  #  echo "::: Cannot continue, neither IPv4 or IPv6 selected"
-  #  echo "::: Exiting"
-  #  exit 1
- # fi
+  if [ ! ${useIPv4} ] && [ ! ${useIPv6} ]; then
+    echo "::: Cannot continue, neither IPv4 or IPv6 selected"
+    echo "::: Exiting"
+    exit 1
+  fi
 }
 
-#getStaticIPv4Settings() {
- # local ipSettingsCorrect
+getStaticIPv4Settings() {
+  local ipSettingsCorrect
   # Ask if the user wants to use DHCP settings as their static IP
-  #if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Do you want to use your current network settings as a static address?
-  #        IP address:    ${IPV4_ADDRESS}
-  #        Gateway:       ${IPv4gw}" ${r} ${c}; then
+  if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Do you want to use your current network settings as a static address?
+          IP address:    ${IPV4_ADDRESS}
+          Gateway:       ${IPv4gw}" ${r} ${c}; then
     # If they choose yes, let the user know that the IP address will not be available via DHCP and may cause a conflict.
-   # whiptail --msgbox --backtitle "IP information" --title "FYI: IP Conflict" "It is possible your router could still try to assign this IP to a device, which would cause a conflict.  But in most cases the router is smart enough to not do that.
-#If you are worried, either manually set the address, or modify the DHCP reservation pool so it does not include the IP you want.
-#It is also possible to use a DHCP reservation, but if you are going to do that, you might as well set a static address." ${r} ${c}
+    whiptail --msgbox --backtitle "IP information" --title "FYI: IP Conflict" "It is possible your router could still try to assign this IP to a device, which would cause a conflict.  But in most cases the router is smart enough to not do that.
+If you are worried, either manually set the address, or modify the DHCP reservation pool so it does not include the IP you want.
+It is also possible to use a DHCP reservation, but if you are going to do that, you might as well set a static address." ${r} ${c}
     # Nothing else to do since the variables are already set above
-  #else
+  else
     # Otherwise, we need to ask the user to input their desired settings.
     # Start by getting the IPv4 address (pre-filling it with info gathered from DHCP)
     # Start a loop to let the user enter their information with the chance to go back and edit it if necessary
-   # until [[ ${ipSettingsCorrect} = True ]]; do
+    until [[ ${ipSettingsCorrect} = True ]]; do
 
       # Ask for the IPv4 address
-      #IPV4_ADDRESS=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 address" --inputbox "Enter your desired IPv4 address" ${r} ${c} "${IPV4_ADDRESS}" 3>&1 1>&2 2>&3) || \
+      IPV4_ADDRESS=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 address" --inputbox "Enter your desired IPv4 address" ${r} ${c} "${IPV4_ADDRESS}" 3>&1 1>&2 2>&3) || \
       # Cancelling IPv4 settings window
-     # { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
-      #echo "::: Your static IPv4 address:    ${IPV4_ADDRESS}"
+      { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
+      echo "::: Your static IPv4 address:    ${IPV4_ADDRESS}"
 
       # Ask for the gateway
-     # IPv4gw=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 gateway (router)" --inputbox "Enter your desired IPv4 default gateway" ${r} ${c} "${IPv4gw}" 3>&1 1>&2 2>&3) || \
+      IPv4gw=$(whiptail --backtitle "Calibrating network interface" --title "IPv4 gateway (router)" --inputbox "Enter your desired IPv4 default gateway" ${r} ${c} "${IPv4gw}" 3>&1 1>&2 2>&3) || \
       # Cancelling gateway settings window
-     # { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
-     # echo "::: Your static IPv4 gateway:    ${IPv4gw}"
+      { ipSettingsCorrect=False; echo "::: Cancel selected. Exiting..."; exit 1; }
+      echo "::: Your static IPv4 gateway:    ${IPv4gw}"
 
       # Give the user a chance to review their settings before moving on
-     # if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Are these settings correct?
-      #  IP address:    ${IPV4_ADDRESS}
-       # Gateway:       ${IPv4gw}" ${r} ${c}; then
+      if whiptail --backtitle "Calibrating network interface" --title "Static IP Address" --yesno "Are these settings correct?
+        IP address:    ${IPV4_ADDRESS}
+        Gateway:       ${IPv4gw}" ${r} ${c}; then
         # After that's done, the loop ends and we move on
-      #  ipSettingsCorrect=True
-      #  else
+        ipSettingsCorrect=True
+        else
         # If the settings are wrong, the loop continues
-     #   ipSettingsCorrect=False
-     # fi
-   # done
+        ipSettingsCorrect=False
+      fi
+    done
     # End the if statement for DHCP vs. static
-#  fi
-#}
+  fi
+}
 
 setDHCPCD() {
   # Append these lines to dhcpcd.conf to enable a static IP
@@ -572,45 +572,45 @@ setDNS() {
 }
 
 setLogging() {
-  #local LogToggleCommand
-  #local LogChooseOptions
-  #local LogChoices
+  local LogToggleCommand
+  local LogChooseOptions
+  local LogChoices
 
-  #LogToggleCommand=(whiptail --separate-output --radiolist "Do you want to log queries?\n (Disabling will render graphs on the Admin page useless):" ${r} ${c} 6)
- # LogChooseOptions=("On (Recommended)" "" on
-   #   Off "" off)
-  #LogChoices=$("${LogToggleCommand[@]}" "${LogChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
-  #  case ${LogChoices} in
-   #   "On (Recommended)")
+  LogToggleCommand=(whiptail --separate-output --radiolist "Do you want to log queries?\n (Disabling will render graphs on the Admin page useless):" ${r} ${c} 6)
+  LogChooseOptions=("On (Recommended)" "" on
+      Off "" off)
+  LogChoices=$("${LogToggleCommand[@]}" "${LogChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
+    case ${LogChoices} in
+      "On (Recommended)")
         echo "::: Logging On."
         QUERY_LOGGING=true
-     #   ;;
-     # Off)
-      #  echo "::: Logging Off."
-      #  QUERY_LOGGING=false
-       # ;;
-   # esac
+        ;;
+      Off)
+        echo "::: Logging Off."
+        QUERY_LOGGING=false
+        ;;
+    esac
 }
 
 setAdminFlag() {
-  #local WebToggleCommand
-  #local WebChooseOptions
-  #local WebChoices
+  local WebToggleCommand
+  local WebChooseOptions
+  local WebChoices
 
- # WebToggleCommand=(whiptail --separate-output --radiolist "Do you wish to install the web admin interface?" ${r} ${c} 6)
-  #WebChooseOptions=("On (Recommended)" "" on
-  #    Off "" off)
-  #WebChoices=$("${WebToggleCommand[@]}" "${WebChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
-  #  case ${WebChoices} in
-  #    "On (Recommended)")
+  WebToggleCommand=(whiptail --separate-output --radiolist "Do you wish to install the web admin interface?" ${r} ${c} 6)
+  WebChooseOptions=("On (Recommended)" "" on
+      Off "" off)
+  WebChoices=$("${WebToggleCommand[@]}" "${WebChooseOptions[@]}" 2>&1 >/dev/tty) || (echo "::: Cancel selected. Exiting..." && exit 1)
+    case ${WebChoices} in
+      "On (Recommended)")
         echo "::: Web Interface On."
         INSTALL_WEB=true
-     #   ;;
-     # Off)
-     #   echo "::: Web Interface off."
-     #   INSTALL_WEB=false
-     #   ;;
-   # esac
+        ;;
+      Off)
+        echo "::: Web Interface off."
+        INSTALL_WEB=false
+        ;;
+    esac
 }
 
 
@@ -1301,7 +1301,7 @@ main() {
 
     if command -v sudo &> /dev/null; then
       echo "::: Utility sudo located."
-      exec curl -sSL https://raw.githubusercontent.com/declanherbertson/PiHole/master/originalinstall.sh | sudo bash "$@"
+      exec curl -sSL https://raw.githubusercontent.com/pi-hole/pi-hole/master/automated%20install/basic-install.sh | sudo bash "$@"
       exit $?
     else
       echo "::: sudo is needed for the Web interface to run pihole commands.  Please run this script as root and it will be automatically installed."
@@ -1325,8 +1325,8 @@ main() {
     if [[ "${runUnattended}" == true ]]; then
       echo "::: --unattended passed to install script, no whiptail dialogs will be displayed"
       useUpdateVars=true
-    #else
-     # update_dialogs
+    else
+      update_dialogs
     fi
   fi
 
@@ -1353,7 +1353,7 @@ main() {
 
   if [[ ${useUpdateVars} == false ]]; then
     # Display welcome dialogs
-    #welcomeDialogs
+    welcomeDialogs
     # Create directory for Pi-hole storage
     mkdir -p /etc/pihole/
 
@@ -1362,9 +1362,9 @@ main() {
       stop_service lighttpd
     fi
     # Determine available interfaces
-    #get_available_interfaces
+    get_available_interfaces
     # Find interfaces and let the user choose one
-    #chooseInterface
+    chooseInterface
     # Decide what upstream DNS Servers to use
     setDNS
     # Let the user decide if they want to block ads over IPv4 and/or IPv6
@@ -1435,9 +1435,9 @@ main() {
 
   echo "::: done."
 
-  #if [[ "${useUpdateVars}" == false ]]; then
-      #displayFinalMessage "${pw}"
- # fi
+  if [[ "${useUpdateVars}" == false ]]; then
+      displayFinalMessage "${pw}"
+  fi
 
   echo ":::"
   if [[ "${useUpdateVars}" == false ]]; then
