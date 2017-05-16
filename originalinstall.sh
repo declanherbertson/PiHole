@@ -1327,7 +1327,7 @@ main() {
       useUpdateVars=true
     #else
      # update_dialogs
-    #fi
+    fi
   fi
 
   # Start the installer
