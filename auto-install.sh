@@ -280,40 +280,9 @@ verifyFreeDiskSpace() {
 
 
 chooseInterface() {
-  # Turn the available interfaces into an array so it can be used with a whiptail dialog
-  local interfacesArray=()
-  # Number of available interfaces
-  local interfaceCount
-  # Whiptail variable storage
-  local chooseInterfaceCmd
-  # Temporary Whiptail options storage
-  local chooseInterfaceOptions
-  # Loop sentinel variable
-  local firstLoop=1
-
-  # Find out how many interfaces are available to choose from
-  interfaceCount=$(echo "${availableInterfaces}" | wc -l)
-
-  if [[ ${interfaceCount} -eq 1 ]]; then
-      PIHOLE_INTERFACE="${availableInterfaces}"
-  else
-      while read -r line; do
-        mode="OFF"
-        if [[ ${firstLoop} -eq 1 ]]; then
-          firstLoop=0
-          mode="ON"
-        fi
-        interfacesArray+=("${line}" "available" "${mode}")
-      done <<< "${availableInterfaces}"
-
-      chooseInterfaceCmd=(whiptail --separate-output --radiolist "Choose An Interface (press space to select)" ${r} ${c} ${interfaceCount})
-      chooseInterfaceOptions=$("${chooseInterfaceCmd[@]}" "${interfacesArray[@]}" 2>&1 >/dev/tty) || \
-      { echo "::: Cancel selected. Exiting"; exit 1; }
-      for desiredInterface in ${chooseInterfaceOptions}; do
-        PIHOLE_INTERFACE=${desiredInterface}
-        echo "::: Using interface: $PIHOLE_INTERFACE"
-      done
-  fi
+ 
+ PIHOLE_INTERFACE=eth0
+ 
 }
 
 useIPv6dialog() {
