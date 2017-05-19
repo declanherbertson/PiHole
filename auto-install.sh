@@ -1293,6 +1293,8 @@ main() {
 
   echo ":::"
   echo "::: The install log is located at: /etc/pihole/install.log"
+  echo "::: Rebooting now"
+  sudo reboot now
 }
 
 if [[ "${PH_TEST}" != true ]] ; then
