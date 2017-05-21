@@ -1136,6 +1136,9 @@ main() {
   fi
 
   # Check for supported distribution
+  ###################################################
+  echo n
+  echo -e
   distro_check
 
   # Check arguments for the undocumented flags
