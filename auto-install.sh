@@ -1137,11 +1137,11 @@ main() {
 
   # Check for supported distribution
   ###################################################
-  pihole uninstall 
-  sleep .5
-  echo n
-  echo -e
-  distro_check
+  #pihole uninstall 
+  #sleep .5
+  #echo n
+  #echo -e
+  #distro_check
 
   # Check arguments for the undocumented flags
   for var in "$@"; do
