@@ -54,40 +54,7 @@ skipSpaceCheck=false
 reconfigure=false
 runUnattended=false
 
-#####################################################################################################
-# Compatability
-if [ -x "$(command -v rpm)" ]; then
-	# Fedora Family
-	if [ -x "$(command -v dnf)" ]; then
-		PKG_MANAGER="dnf"
-	else
-		PKG_MANAGER="yum"
-	fi
-	PKG_REMOVE="${PKG_MANAGER} remove -y"
-	PIHOLE_DEPS=( bind-utils bc dnsmasq lighttpd lighttpd-fastcgi php-common git curl unzip wget findutils )
-	package_check() {
-		rpm -qa | grep ^$1- > /dev/null
-	}
-	package_cleanup() {
-		${SUDO} ${PKG_MANAGER} -y autoremove
-	}
-elif [ -x "$(command -v apt-get)" ]; then
-	# Debian Family
-	PKG_MANAGER="apt-get"
-	PKG_REMOVE="${PKG_MANAGER} -y remove --purge"
-	PIHOLE_DEPS=( dnsutils bc dnsmasq lighttpd php5-common git curl unzip wget )
-	package_check() {
-		dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
-	}
-	package_cleanup() {
-		${SUDO} ${PKG_MANAGER} -y autoremove
-		${SUDO} ${PKG_MANAGER} -y autoclean
-	}
-else
-	echo "OS distribution not supported"
-	exit
-fi
-########################################################################################################
+
 spinner() {
 	local pid=$1
 	local delay=0.50
@@ -1282,6 +1249,42 @@ main() {
 
   # Check for supported distribution
   ######### uninstall script ###########
+  
+  #####################################################################################################
+  # Compatability
+  if [ -x "$(command -v rpm)" ]; then
+	  # Fedora Family
+	  if [ -x "$(command -v dnf)" ]; then
+		  PKG_MANAGER="dnf"
+	  else
+		  PKG_MANAGER="yum"
+	  fi
+	  PKG_REMOVE="${PKG_MANAGER} remove -y"
+	  PIHOLE_DEPS=( bind-utils bc dnsmasq lighttpd lighttpd-fastcgi php-common git curl unzip wget findutils )
+	  package_check() {
+		  rpm -qa | grep ^$1- > /dev/null
+	  }
+	  package_cleanup() {
+		  ${SUDO} ${PKG_MANAGER} -y autoremove
+	  }
+  elif [ -x "$(command -v apt-get)" ]; then
+	  # Debian Family
+	  PKG_MANAGER="apt-get"
+	  PKG_REMOVE="${PKG_MANAGER} -y remove --purge"
+	  PIHOLE_DEPS=( dnsutils bc dnsmasq lighttpd php5-common git curl unzip wget )
+	  package_check() {
+	  	  dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
+	  }
+	  package_cleanup() {
+		  ${SUDO} ${PKG_MANAGER} -y autoremove
+		  ${SUDO} ${PKG_MANAGER} -y autoclean
+	  }
+  else
+	  echo "OS distribution not supported"
+	  exit
+  fi
+########################################################################################################
+  
   echo "::: Removing PiHole, keeping dependencies"
   removeNoPurge
   ##############################################
