@@ -18,6 +18,7 @@
 
 set -e
 ######## VARIABLES #########
+SUDO = sudo
 tmpLog=/tmp/pihole-install.log
 instalLogLoc=/etc/pihole/install.log
 setupVars=/etc/pihole/setupVars.conf
