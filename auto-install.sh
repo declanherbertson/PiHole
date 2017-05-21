@@ -1138,6 +1138,7 @@ main() {
   # Check for supported distribution
   ###################################################
   pihole uninstall 
+  sleep .5
   echo n
   echo -e
   distro_check
